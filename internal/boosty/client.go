@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -17,6 +18,7 @@ const APIURL = "https://api.boosty.to"
 const maxResponse = 16 << 20
 
 type Client struct {
+	mu        sync.Mutex // Go memory synchronization complements the cross-process file lock.
 	BaseURL   string
 	HTTP      *http.Client
 	TokenFile string

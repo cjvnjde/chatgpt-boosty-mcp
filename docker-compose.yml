@@ -1,0 +1,35 @@
+services:
+  boosty-mcp:
+    image: boosty-mcp:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      MCP_TRANSPORT: http
+      MCP_HTTP_ADDR: 0.0.0.0:8080
+      MCP_BEARER_TOKEN: ${MCP_BEARER_TOKEN:?set MCP_BEARER_TOKEN}
+      MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-localhost:8080,127.0.0.1:8080,boosty-mcp:8080,boosty-mcp:8081}
+      BOOSTY_TOKEN_FILE: /app/data/token.json
+      BOOSTY_READ_ONLY: ${BOOSTY_READ_ONLY:-false}
+    expose:
+      - "8080"
+    volumes:
+      - boosty-data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "boosty-mcp", "health"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  boosty-data:

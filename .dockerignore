@@ -1,0 +1,10 @@
+.git
+.agents
+.codex
+.aws
+.env
+.env.*
+data
+bin
+coverage.out
+*.test

@@ -63,10 +63,13 @@ func TestConcurrentRefreshAndReload(t *testing.T) {
 		t.Fatal(err)
 	}
 	var wg sync.WaitGroup
-	for range 15 {
+	for i := range 15 {
 		wg.Go(func() {
-			c := New(file)
-			c.BaseURL = upstream.URL
+			c := first
+			if i%2 == 0 {
+				c = New(file)
+				c.BaseURL = upstream.URL
+			}
 			if _, err := c.Do(context.Background(), Request{Method: "GET", Path: "/v1/user/current", RequireAuth: true}); err != nil {
 				t.Error(err)
 			}

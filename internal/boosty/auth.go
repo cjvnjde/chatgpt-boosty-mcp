@@ -86,6 +86,8 @@ func ParseCookies(header string) (Token, error) {
 	return t, nil
 }
 func (c *Client) Import(ctx context.Context, t Token) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if !t.valid() {
 		return errors.New("invalid Boosty credentials")
 	}
@@ -115,6 +117,8 @@ func (c *Client) loadToken() (Token, error) {
 	return t, nil
 }
 func (c *Client) credentials(ctx context.Context, rejected string) (Token, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	unlock, err := c.lockStore(ctx)
 	if err != nil {
 		return Token{}, err

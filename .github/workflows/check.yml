@@ -1,0 +1,25 @@
+name: Check
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: make check build
+      - name: Validate Compose definitions
+        env:
+          MCP_BEARER_TOKEN: test-direct-token-at-least-32-characters
+          MCP_TUNNEL_TOKEN: test-tunnel-token-at-least-32-characters
+          CONTROL_PLANE_API_KEY: test-only-placeholder
+          CONTROL_PLANE_TUNNEL_ID: tunnel_test
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.local.yml config --quiet
+          docker compose -f docker-compose.yml -f docker-compose.tunnel.yml config --quiet
+          docker compose -f docker-compose.dokploy.yml config --quiet
+      - run: docker build -t boosty-mcp:test .

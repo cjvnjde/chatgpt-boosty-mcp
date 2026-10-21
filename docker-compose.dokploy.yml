@@ -1,0 +1,5 @@
+# Single Dokploy Compose path; requires Docker Compose 2.20+.
+include:
+  - path:
+      - docker-compose.yml
+      - docker-compose.tunnel.yml

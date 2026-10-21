@@ -70,6 +70,23 @@ func schema(e Endpoint) map[string]any {
 		properties[n] = fieldSchema(n)
 		required = append(required, n)
 	}
+	// Narrow endpoint-specific filters without conflating unrelated API enums.
+	enums := map[string][]string{}
+	switch e.Name {
+	case "list_media":
+		enums["type"] = []string{"all", "image", "video", "audio"}
+	case "list_targets":
+		enums["type"] = []string{"money", "subscribers"}
+	case "list_donations":
+		enums["type"] = []string{"post", "dialog"}
+	case "list_visit_sources", "list_payment_sources":
+		enums["type"] = []string{"referer", "utm"}
+		enums["period"] = []string{"day", "week", "month"}
+		enums["order"] = []string{"gt", "lt"}
+	}
+	for key, choices := range enums {
+		properties[key].(map[string]any)["enum"] = choices
+	}
 	return map[string]any{"type": "object", "properties": properties, "required": required, "additionalProperties": false}
 }
 func fieldSchema(n string) map[string]any {
