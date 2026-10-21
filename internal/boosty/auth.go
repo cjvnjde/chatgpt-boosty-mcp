@@ -64,12 +64,18 @@ func ParseCookies(header string) (Token, error) {
 		}
 	}
 	raw := cookies["auth"]
-	if !strings.HasPrefix(raw, "{") {
+	// Try valid raw JSON first so literal percent escapes in decoded tokens stay intact.
+	// A leading brace does not imply decoded JSON: browsers may leave braces
+	// literal while percent-encoding quotes and commas.
+	if !json.Valid([]byte(raw)) {
 		decoded, err := url.PathUnescape(raw)
 		if err != nil {
 			return Token{}, errors.New("invalid auth cookie encoding")
 		}
 		raw = decoded
+	}
+	if !json.Valid([]byte(raw)) {
+		return Token{}, errors.New("auth cookie missing or invalid")
 	}
 	var session map[string]any
 	dec := json.NewDecoder(strings.NewReader(raw))

@@ -35,6 +35,10 @@ Login works in a **Dokploy container terminal or SSH terminal**, with no browser
 4. Paste the header into `boosty-mcp login`. Terminal input is hidden; only the two required session cookies are retained. Avoid putting cookies in shell arguments, chat, logs or source control.
 5. Run `boosty-mcp status` to check the session with Boosty. It prints no tokens or profile data.
 
+Cookie import accepts decoded, fully URL-encoded, and partially URL-encoded JSON (including literal braces with `%22` quotes).
+
+Before each authenticated request, the server refreshes an access token that has expired or has less than 60 seconds remaining. A 401 also triggers one refresh and retry. The rotated access and refresh tokens are saved to the volume automatically; short access-token lifetime does not require another cookie import. Import again only if the refresh session is revoked, rejected, or lost.
+
 The running service loads newly imported credentials on its next request. No restart is needed. Login is a local command, never an MCP tool. It accepts one Cookie header line on stdin, so private piping is also possible.
 
 Credentials live at `/app/data/token.json` in the `boosty-data` volume (native default `data/token.json`). Refresh tokens rotate; refreshed credentials are saved atomically with mode `0600` before a request proceeds. A Linux file lock coordinates refresh and login across processes. Keep **one server replica per volume** and preserve the volume when redeploying. `docker compose down -v` deletes it. Volume backups contain credentials. If persistence fails after rotation, the process retains the new token and retries saving; fix storage before restarting. If a crash loses an unsaved rotation, import a fresh session.

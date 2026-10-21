@@ -37,6 +37,37 @@ func TestCookieImport(t *testing.T) {
 		}
 	}
 }
+
+// Browsers can escape quotes and commas while leaving the JSON braces literal.
+func TestPartiallyEncodedCookie(t *testing.T) {
+	header := `_clientId=test-device; auth={%22accessToken%22:%22test-access%22%2C%22refreshToken%22:%22test-refresh%22%2C%22expiresAt%22:2000000000000%2C%22isNewUser%22:false}; last_acc={%22name%22:%22Example%22}`
+	token, err := ParseCookies(header)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if token.AccessToken != "test-access" || token.RefreshToken != "test-refresh" || token.DeviceID != "test-device" || token.ExpiresAt != 2000000000 {
+		t.Fatal("incorrect parsed credentials")
+	}
+}
+
+func TestDecodedCookiePreservesPercentAndPlus(t *testing.T) {
+	token, err := ParseCookies(`auth={"accessToken":"test%22+access","refreshToken":"test%25+refresh"}; _clientId=test-device`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if token.AccessToken != "test%22+access" || token.RefreshToken != "test%25+refresh" {
+		t.Fatal("decoded token was altered")
+	}
+}
+
+func TestMalformedCookieRejected(t *testing.T) {
+	for _, raw := range []string{`{%ZZ}`, `{"accessToken":"test","refreshToken":"test"}trailing`, `null`, `[]`} {
+		if _, err := ParseCookies("auth=" + raw + "; _clientId=test-device"); err == nil {
+			t.Fatal("malformed cookie accepted")
+		}
+	}
+}
+
 func TestConcurrentRefreshAndReload(t *testing.T) {
 	var refreshes atomic.Int32
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
